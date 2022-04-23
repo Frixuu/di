@@ -38,6 +38,25 @@ func MustRegisterTransient[TSvc, TImpl any](c Container) {
 	must(RegisterTransient[TSvc, TImpl](c))
 }
 
+func RegisterInstance[TSvc, TImpl any](c Container, i TImpl) (err error) {
+	tImpl := getType[TImpl]()
+	tIf := getType[TSvc]()
+	if err = areTypesValidForDi(tIf, tImpl); err != nil {
+		return
+	}
+	key := getInterfaceKey(tIf)
+	c.Put(key, &SingletonService{
+		ImplType: tImpl,
+		IsBuilt:  true,
+		Instance: reflect.ValueOf(i),
+	})
+	return
+}
+
+func MustRegisterInstance[TSvc, TImpl any](c Container, i TImpl) {
+	must(RegisterInstance[TSvc](c, i))
+}
+
 func Get[T any](c Container) (s T, err error) {
 	tIf := getType[T]()
 	if tIf.Kind() != reflect.Interface {

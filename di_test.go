@@ -81,6 +81,30 @@ func TestTransientGetsDifferent(t *testing.T) {
 	assert.NotSame(t, s2, s)
 }
 
+func TestInstance(t *testing.T) {
+	c := NewContainer()
+
+	type (
+		myInterface interface{}
+		myType      struct {
+			foo int
+		}
+	)
+
+	instance := &myType{
+		foo: 4,
+	}
+	MustRegisterInstance[myInterface](c, instance)
+
+	s, err := Get[myInterface](c)
+	assert.Nil(t, err)
+	assert.IsType(t, instance, s)
+	assert.Equal(t, 4, (s.(*myType)).foo)
+
+	instance.foo = 5
+	assert.Equal(t, 5, (s.(*myType)).foo)
+}
+
 func TestCrossDependency(t *testing.T) {
 	type (
 		S1 interface{}
