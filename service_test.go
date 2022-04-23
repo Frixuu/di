@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestBuild(t *testing.T) {
+func TestSingleton(t *testing.T) {
 	c := NewContainer()
 	Register[a, struct{}](c)
 
@@ -25,4 +25,26 @@ func TestBuild(t *testing.T) {
 
 	assert.Equal(t, tInstance, s.Instance)
 	assert.True(t, s.IsBuilt)
+
+	tInstance2 := s.Build(c)
+	assert.Equal(t, tInstance, tInstance2)
+}
+
+func TestTransient(t *testing.T) {
+	c := NewContainer()
+	Register[a, struct{}](c)
+
+	s := &TransientService{
+		ImplType: reflect.TypeOf(testImpl{}),
+	}
+
+	tInstance := s.Build(c)
+	assert.NotNil(t, tInstance)
+	assert.IsType(t, &testImpl{}, tInstance.Interface())
+
+	impl := tInstance.Interface().(*testImpl)
+	assert.NotNil(t, impl.A)
+
+	tInstance2 := s.Build(c)
+	assert.NotEqual(t, tInstance, tInstance2)
 }

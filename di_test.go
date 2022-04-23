@@ -63,6 +63,24 @@ func TestGet(t *testing.T) {
 	assert.ErrorIs(t, err, ErrNoInterface)
 }
 
+func TestTransientGetsDifferent(t *testing.T) {
+	c := NewContainer()
+
+	type myInterface interface{}
+
+	impl := testImpl{}
+	RegisterTransient[myInterface, testImpl](c)
+
+	s, err := Get[myInterface](c)
+	assert.Nil(t, err)
+	assert.IsType(t, s, &impl)
+
+	// This time, we want returned instances to be different
+	s2, err := Get[myInterface](c)
+	assert.Nil(t, err)
+	assert.NotSame(t, s2, s)
+}
+
 func TestCrossDependency(t *testing.T) {
 	type (
 		S1 interface{}
