@@ -27,13 +27,65 @@ func TestRegister(t *testing.T) {
 	err = Register[myInterface, testImpl](c)
 	assert.Nil(t, err)
 
-	v, ok := c.(*containerImpl).m.Load(key)
+	v, ok := c.(*containerImpl).Get(key)
 	assert.True(t, ok, "no service has been registered")
 
 	svc := v.(*SingletonService)
 	assert.Equal(t, svc.ImplType, reflect.TypeOf(testImpl{}))
 	assert.False(t, svc.IsBuilt)
 	assert.Equal(t, svc.Instance, reflect.Value{})
+}
+
+func TestNamed(t *testing.T) {
+	c := NewContainer()
+
+	type (
+		myImplGlobal struct{}
+		myImpl1      struct{}
+		myImpl2      struct{}
+		myImpl3      struct{}
+	)
+
+	const key = "github.com/zekrotja/di.myInterface"
+	ig := &myImplGlobal{}
+	i1 := &myImpl1{}
+	i2 := &myImpl2{}
+	i3 := &myImpl3{}
+
+	c.PutNamed(key, "svc-1", &SingletonService{
+		IsBuilt:  true,
+		Instance: reflect.ValueOf(i1),
+	})
+
+	c.PutNamed(key, "svc-2", &SingletonService{
+		IsBuilt:  true,
+		Instance: reflect.ValueOf(i2),
+	})
+
+	c.Put(key, &SingletonService{
+		IsBuilt:  true,
+		Instance: reflect.ValueOf(ig),
+	})
+
+	c.PutNamed(key, "svc-3", &SingletonService{
+		IsBuilt:  true,
+		Instance: reflect.ValueOf(i3),
+	})
+
+	sg, _ := c.(*containerImpl).Get(key)
+	assert.Same(t, ig, sg.Build(c).Interface())
+
+	s1, _ := c.(*containerImpl).GetNamed(key, "svc-1")
+	assert.Same(t, i1, s1.Build(c).Interface())
+
+	s2, _ := c.(*containerImpl).GetNamed(key, "svc-2")
+	assert.Same(t, i2, s2.Build(c).Interface())
+
+	s3, _ := c.(*containerImpl).GetNamed(key, "svc-3")
+	assert.Same(t, i3, s3.Build(c).Interface())
+
+	sg2, _ := c.(*containerImpl).Get(key)
+	assert.Same(t, ig, sg2.Build(c).Interface())
 }
 
 func TestGet(t *testing.T) {
