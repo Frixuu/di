@@ -22,7 +22,7 @@ func TestRegister(t *testing.T) {
 	assert.ErrorIs(t, err, ErrNoInterface)
 
 	type myInterface interface{}
-	const key = "github.com/zekrotja/di.myInterface"
+	key := getType[myInterface]()
 
 	err = Register[myInterface, testImpl](c)
 	assert.Nil(t, err)
@@ -40,13 +40,14 @@ func TestNamed(t *testing.T) {
 	c := NewContainer()
 
 	type (
+		myInterface  interface{}
 		myImplGlobal struct{}
 		myImpl1      struct{}
 		myImpl2      struct{}
 		myImpl3      struct{}
 	)
 
-	const key = "github.com/zekrotja/di.myInterface"
+	key := getType[myInterface]()
 	ig := &myImplGlobal{}
 	i1 := &myImpl1{}
 	i2 := &myImpl2{}

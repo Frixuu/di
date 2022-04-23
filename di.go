@@ -10,8 +10,7 @@ func Register[TSvc, TImpl any](c Container) (err error) {
 	if err = areTypesValidForDi(tIf, tImpl); err != nil {
 		return
 	}
-	key := getInterfaceKey(tIf)
-	c.Put(key, &SingletonService{
+	c.Put(tIf, &SingletonService{
 		ImplType: tImpl,
 	})
 	return
@@ -27,8 +26,7 @@ func RegisterTransient[TSvc, TImpl any](c Container) (err error) {
 	if err = areTypesValidForDi(tIf, tImpl); err != nil {
 		return
 	}
-	key := getInterfaceKey(tIf)
-	c.Put(key, &TransientService{
+	c.Put(tIf, &TransientService{
 		ImplType: tImpl,
 	})
 	return
@@ -44,8 +42,7 @@ func RegisterInstance[TSvc, TImpl any](c Container, i TImpl) (err error) {
 	if err = areTypesValidForDi(tIf, tImpl); err != nil {
 		return
 	}
-	key := getInterfaceKey(tIf)
-	c.Put(key, &SingletonService{
+	c.Put(tIf, &SingletonService{
 		ImplType: tImpl,
 		IsBuilt:  true,
 		Instance: reflect.ValueOf(i),
@@ -63,8 +60,7 @@ func Get[T any](c Container) (s T, err error) {
 		err = ErrNoInterface
 		return
 	}
-	key := getInterfaceKey(tIf)
-	sb, ok := c.Get(key)
+	sb, ok := c.Get(tIf)
 	if !ok {
 		err = ErrNotRegistered
 		return

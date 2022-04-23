@@ -43,8 +43,7 @@ func populateService(s *reflect.Value, c Container, t reflect.Type) {
 		if field.Kind() != reflect.Interface {
 			continue
 		}
-		key := getInterfaceKey(field.Type())
-		svc, ok := c.Get(key)
+		svc, ok := c.Get(field.Type())
 		if !ok {
 			continue
 		}

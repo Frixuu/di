@@ -3,7 +3,7 @@ package di
 import "sync"
 
 // typedSyncMap is a typed wrapper over sync.Map.
-type typedSyncMap[K comparable, V any] struct {
+type typedSyncMap[K any, V any] struct {
 	m sync.Map
 }
 
