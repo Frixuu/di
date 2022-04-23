@@ -89,6 +89,50 @@ func TestNamed(t *testing.T) {
 	assert.Same(t, ig, sg2.Build(c).Interface())
 }
 
+func TestNamedFromTag(t *testing.T) {
+	type (
+		svc           interface{}
+		svcOne        struct{}
+		svcTwo        struct{}
+		controller    interface{}
+		controllerOne struct {
+			Service svc `di:"named:one"`
+		}
+		controllerTwo struct {
+			Service svc `di:"named:two"`
+		}
+	)
+
+	c := NewContainer()
+	MustRegisterNamed[svc, svcOne](c, "one")
+	MustRegisterNamed[controller, controllerOne](c, "one")
+	MustRegisterNamed[svc, svcTwo](c, "two")
+	MustRegisterNamed[controller, controllerTwo](c, "two")
+
+	s1 := MustGetNamed[svc](c, "one")
+	assert.NotNil(t, s1)
+	c1 := MustGetNamed[controller](c, "one")
+	assert.NotNil(t, c1)
+	assert.IsType(t, &controllerOne{}, c1)
+	cc1, ok := c1.(*controllerOne)
+	assert.True(t, ok)
+	assert.Same(t, s1, cc1.Service)
+
+	s2 := MustGetNamed[svc](c, "two")
+	assert.NotNil(t, s2)
+	assert.NotSame(t, s1, s2)
+	c2 := MustGetNamed[controller](c, "two")
+	assert.NotNil(t, c2)
+	assert.IsType(t, &controllerTwo{}, c2)
+	cc2, ok := c2.(*controllerTwo)
+	assert.True(t, ok)
+	assert.Same(t, s2, cc2.Service)
+
+	assert.Panics(t, func() {
+		MustGet[svc](c)
+	})
+}
+
 func TestGet(t *testing.T) {
 	c := NewContainer()
 

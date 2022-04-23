@@ -43,11 +43,21 @@ func populateService(s *reflect.Value, c Container, t reflect.Type) {
 		if field.Kind() != reflect.Interface {
 			continue
 		}
-		svc, ok := c.Get(field.Type())
-		if !ok {
+
+		if !field.CanSet() || !field.IsNil() {
 			continue
 		}
-		if field.CanSet() && field.IsNil() {
+
+		var svc Service
+		meta := getTagMetaMap(t.Field(i), "di")
+		name, ok := meta["named"]
+		if ok {
+			svc, ok = c.GetNamed(field.Type(), name)
+		} else {
+			svc, ok = c.Get(field.Type())
+		}
+
+		if ok {
 			field.Set(svc.Build(c))
 		}
 	}
