@@ -11,7 +11,7 @@ func TestBuild(t *testing.T) {
 	c := NewContainer()
 	Register[a, struct{}](c)
 
-	s := &Service{
+	s := &SingletonService{
 		ImplType: reflect.TypeOf(testImpl{}),
 		IsBuilt:  false,
 	}

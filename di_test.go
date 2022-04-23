@@ -30,7 +30,7 @@ func TestRegister(t *testing.T) {
 	v, ok := c.(*containerImpl).m.Load(key)
 	assert.True(t, ok, "no service has been registered")
 
-	svc := v.(*Service)
+	svc := v.(*SingletonService)
 	assert.Equal(t, svc.ImplType, reflect.TypeOf(testImpl{}))
 	assert.False(t, svc.IsBuilt)
 	assert.Equal(t, svc.Instance, reflect.Value{})

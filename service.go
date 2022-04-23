@@ -4,13 +4,17 @@ import (
 	"reflect"
 )
 
-type Service struct {
+type Service interface {
+	Build(c Container) reflect.Value
+}
+
+type SingletonService struct {
 	ImplType reflect.Type
 	IsBuilt  bool
 	Instance reflect.Value
 }
 
-func (s *Service) Build(c Container) (instance reflect.Value) {
+func (s *SingletonService) Build(c Container) (instance reflect.Value) {
 	if s.IsBuilt {
 		instance = s.Instance
 		return
@@ -18,21 +22,24 @@ func (s *Service) Build(c Container) (instance reflect.Value) {
 	instance = reflect.New(s.ImplType)
 	s.Instance = instance
 	s.IsBuilt = true
-	elem := instance.Elem()
+	populateService(&instance, c, s.ImplType)
+	return
+}
+
+func populateService(s *reflect.Value, c Container, t reflect.Type) {
+	elem := s.Elem()
 	for i := 0; i < elem.NumField(); i++ {
-		tF := elem.Field(i)
-		if tF.Kind() != reflect.Interface {
+		field := elem.Field(i)
+		if field.Kind() != reflect.Interface {
 			continue
 		}
-		key := getInterfaceKey(tF.Type())
+		key := getInterfaceKey(field.Type())
 		svc, ok := c.Get(key)
 		if !ok {
 			continue
 		}
-		if tF.CanSet() && tF.IsNil() {
-			fInstance := svc.Build(c)
-			tF.Set(fInstance)
+		if field.CanSet() && field.IsNil() {
+			field.Set(svc.Build(c))
 		}
 	}
-	return
 }
