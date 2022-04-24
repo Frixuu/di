@@ -91,8 +91,8 @@ func MustGet[T any](c Container) (s T) {
 
 func GetNamed[T any](c Container, name string) (s T, err error) {
 	tIf := getType[T]()
-	if tIf.Kind() != reflect.Interface {
-		err = ErrNoInterface
+	err = checkServiceType(tIf)
+	if err != nil {
 		return
 	}
 	sb, ok := c.GetNamed(tIf, name)
@@ -114,12 +114,32 @@ func MustGetNamed[T any](c Container, name string) (s T) {
 	return
 }
 
+// checkServiceType checks if a type can be registered as a service type.
+func checkServiceType(tIf reflect.Type) error {
+	isIf := tIf.Kind() == reflect.Interface
+	if isIf {
+		return nil
+	}
+	isPtrToStruct := tIf.Kind() == reflect.Pointer && tIf.Elem().Kind() == reflect.Struct
+	if isPtrToStruct {
+		return nil
+	}
+	return ErrInvalidServiceType
+}
+
+// areTypesValidForDi checks if a pair of an abstract and concrete type are valid for injection.
 func areTypesValidForDi(tIf reflect.Type, tImpl reflect.Type) error {
-	if tIf.Kind() != reflect.Interface {
-		return ErrNoInterface
+	if err := checkServiceType(tIf); err != nil {
+		return err
 	}
-	if !tImpl.Implements(tIf) && !reflect.PointerTo(tImpl).Implements(tIf) {
-		return ErrDoesNotImplInterface
+	isIf := tIf.Kind() == reflect.Interface
+	isImpl := isIf && (tImpl.Implements(tIf) || reflect.PointerTo(tImpl).Implements(tIf))
+	if isImpl {
+		return nil
 	}
-	return nil
+	isPtr := tIf == reflect.PointerTo(tImpl)
+	if isPtr {
+		return nil
+	}
+	return ErrDoesNotImplInterface
 }

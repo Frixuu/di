@@ -19,7 +19,7 @@ func TestRegister(t *testing.T) {
 	// Infers testImpl as type instead
 	// of an interface.
 	err := Register[testImpl, testImpl](c)
-	assert.ErrorIs(t, err, ErrNoInterface)
+	assert.ErrorIs(t, err, ErrInvalidServiceType)
 
 	type myInterface interface{}
 	key := getType[myInterface]()
@@ -157,7 +157,7 @@ func TestGet(t *testing.T) {
 	assert.ErrorIs(t, err, ErrNotRegistered)
 
 	_, err = Get[struct{}](c)
-	assert.ErrorIs(t, err, ErrNoInterface)
+	assert.ErrorIs(t, err, ErrInvalidServiceType)
 }
 
 func TestTransientGetsDifferent(t *testing.T) {
@@ -228,6 +228,18 @@ func TestCrossDependency(t *testing.T) {
 
 	s1i := s2i.S.(*S1Impl)
 	assert.NotNil(t, s1i.S)
+}
+
+func TestStructPointer(t *testing.T) {
+	type myStruct struct{}
+	c := NewContainer()
+	assert.NotPanics(t, func() {
+		MustRegisterTransient[*myStruct, myStruct](c)
+	})
+
+	v, err := Get[*myStruct](c)
+	assert.Nil(t, err)
+	assert.IsType(t, &myStruct{}, v)
 }
 
 func TestNoInterface(t *testing.T) {
