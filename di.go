@@ -15,7 +15,7 @@ func MustRegister[TSvc, TImpl any](c Container) {
 func RegisterNamed[TSvc, TImpl any](c Container, name string) (err error) {
 	tImpl := getType[TImpl]()
 	tIf := getType[TSvc]()
-	if err = areTypesValidForDi(tIf, tImpl); err != nil {
+	if err = areTypesValidForDi(tIf, tImpl, false); err != nil {
 		return
 	}
 	c.PutNamed(tIf, name, &SingletonService{
@@ -39,7 +39,7 @@ func MustRegisterTransient[TSvc, TImpl any](c Container) {
 func RegisterTransientNamed[TSvc, TImpl any](c Container, name string) (err error) {
 	tImpl := getType[TImpl]()
 	tIf := getType[TSvc]()
-	if err = areTypesValidForDi(tIf, tImpl); err != nil {
+	if err = areTypesValidForDi(tIf, tImpl, false); err != nil {
 		return
 	}
 	c.PutNamed(tIf, name, &TransientService{
@@ -63,7 +63,7 @@ func MustRegisterInstance[TSvc, TImpl any](c Container, i TImpl) {
 func RegisterInstanceNamed[TSvc, TImpl any](c Container, name string, i TImpl) (err error) {
 	tImpl := getType[TImpl]()
 	tIf := getType[TSvc]()
-	if err = areTypesValidForDi(tIf, tImpl); err != nil {
+	if err = areTypesValidForDi(tIf, tImpl, true); err != nil {
 		return
 	}
 	c.PutNamed(tIf, name, &SingletonService{
@@ -116,28 +116,26 @@ func MustGetNamed[T any](c Container, name string) (s T) {
 
 // checkServiceType checks if a type can be registered as a service type.
 func checkServiceType(tIf reflect.Type) error {
-	isIf := tIf.Kind() == reflect.Interface
-	if isIf {
+	if isInterface(tIf) {
 		return nil
 	}
-	isPtrToStruct := tIf.Kind() == reflect.Pointer && tIf.Elem().Kind() == reflect.Struct
-	if isPtrToStruct {
+	if isPointerToStruct(tIf) {
 		return nil
 	}
 	return ErrInvalidServiceType
 }
 
 // areTypesValidForDi checks if a pair of an abstract and concrete type are valid for injection.
-func areTypesValidForDi(tIf reflect.Type, tImpl reflect.Type) error {
+func areTypesValidForDi(tIf reflect.Type, tImpl reflect.Type, allowSamePtr bool) error {
 	if err := checkServiceType(tIf); err != nil {
 		return err
 	}
-	isIf := tIf.Kind() == reflect.Interface
+	isIf := isInterface(tIf)
 	isImpl := isIf && (tImpl.Implements(tIf) || reflect.PointerTo(tImpl).Implements(tIf))
 	if isImpl {
 		return nil
 	}
-	isPtr := tIf == reflect.PointerTo(tImpl)
+	isPtr := tIf == reflect.PointerTo(tImpl) || (allowSamePtr && tIf == tImpl)
 	if isPtr {
 		return nil
 	}

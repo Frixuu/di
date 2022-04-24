@@ -40,7 +40,7 @@ func populateService(s *reflect.Value, c Container, t reflect.Type) {
 	elem := s.Elem()
 	for i := 0; i < elem.NumField(); i++ {
 		field := elem.Field(i)
-		if field.Kind() != reflect.Interface {
+		if !isInterfaceV(field) && !isPointerToStructV(field) {
 			continue
 		}
 

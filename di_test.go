@@ -232,14 +232,54 @@ func TestCrossDependency(t *testing.T) {
 
 func TestStructPointer(t *testing.T) {
 	type myStruct struct{}
+	type myStruct2 struct{}
 	c := NewContainer()
 	assert.NotPanics(t, func() {
 		MustRegisterTransient[*myStruct, myStruct](c)
+	})
+	assert.Panics(t, func() {
+		MustRegisterTransient[*myStruct2, *myStruct2](c)
 	})
 
 	v, err := Get[*myStruct](c)
 	assert.Nil(t, err)
 	assert.IsType(t, &myStruct{}, v)
+
+	_, err = Get[*myStruct2](c)
+	assert.NotNil(t, err)
+}
+
+func TestFieldPtrSingletonAndTransientFail(t *testing.T) {
+	type (
+		mySingleton struct{}
+		myTransient struct{}
+	)
+
+	c := NewContainer()
+	assert.Panics(t, func() { MustRegister[*mySingleton, *mySingleton](c) })
+	assert.Panics(t, func() { MustRegisterTransientNamed[*myTransient, *myTransient](c, "name") })
+}
+
+func TestFieldPtrInstanceSucceeds(t *testing.T) {
+	type (
+		logger struct {
+			foo int
+		}
+		controller struct {
+			Log *logger `di:"named:bar"`
+		}
+	)
+	c := NewContainer()
+	assert.NotPanics(t, func() {
+		MustRegisterInstanceNamed[*logger](c, "bar", &logger{foo: 3})
+		MustRegister[*controller, controller](c)
+	})
+
+	s, err := Get[*controller](c)
+	assert.Nil(t, err)
+	assert.NotNil(t, s)
+	assert.NotNil(t, s.Log)
+	assert.Equal(t, 3, s.Log.foo)
 }
 
 func TestNoInterface(t *testing.T) {
